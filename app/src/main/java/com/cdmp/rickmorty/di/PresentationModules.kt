@@ -6,7 +6,7 @@ import org.koin.dsl.module.module
 
 object PresentationModules {
     val homeModule = module {
-        viewModel { HomeViewModel(getAllCharactersCase = get()) }
+        viewModel { HomeViewModel(getCharacterCase = get()) }
     }
 }
 

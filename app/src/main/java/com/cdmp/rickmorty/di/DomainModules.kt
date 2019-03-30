@@ -1,10 +1,10 @@
 package com.cdmp.rickmorty.di
 
-import com.cdmp.rickmorty.domain.usecase.GetAllCharactersCase
+import com.cdmp.rickmorty.domain.usecase.GetCharacterCase
 import org.koin.dsl.module.module
 
 object DomainModules {
     val useCaseModules = module {
-        single { GetAllCharactersCase(get()) }
+        single { GetCharacterCase(get()) }
     }
 }

@@ -3,47 +3,40 @@ package com.cdmp.rickmorty.presentation.home
 import androidx.annotation.UiThread
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import arrow.effects.extensions.io.fx.fxCancellable
-import arrow.effects.extensions.io.unsafeRun.runBlocking
 import androidx.lifecycle.viewModelScope
 import arrow.core.Try
-import arrow.unsafe
-import com.cdmp.rickmorty.data.entity.CharacterList
-import com.cdmp.rickmorty.domain.usecase.GetAllCharactersCase
+import com.cdmp.rickmorty.domain.model.CharacterListModel
+import com.cdmp.rickmorty.domain.usecase.GetCharacterCase
+import com.cdmp.rickmorty.presentation.home.model.CharacterDisplayModel
+import com.cdmp.rickmorty.presentation.home.model.HomeItemDisplayModel
+import com.cdmp.rickmorty.presentation.home.model.LoadingDisplayModel
 import com.cdmp.rickmorty.utils.default
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class HomeViewModel(private val getAllCharactersCase: GetAllCharactersCase) : ViewModel() {
+class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel() {
 
-    val characterList = MutableLiveData<CharacterList?>().default(null)
-    private val disposer = mutableListOf<() -> Unit>()
+    val characterList = MutableLiveData<List<HomeItemDisplayModel>>().default(listOf())
+    private var nextPage: Int? = null
 
-    fun startArrowVersion() {
-        val (fetchCharacters, cancel) = fxCancellable {
-            val result = !effect { getAllCharactersCase() }.attempt()
-            Dispatchers.Main.shift()
-            result.fold(
-                { !effect { it.reportError() } },
-                { !effect { it.displayResult() } }
-            )
-        }
-
-        disposer.add(cancel)
-        unsafe { runBlocking { fetchCharacters } }
+    fun start() {
+        loadCharacters()
     }
 
-    fun startKtxVersion() {
+    fun loadNext() {
+        loadCharacters()
+    }
+
+    private fun loadCharacters() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                Try { getAllCharactersCase() }
+                Try { getCharacterCase * (nextPage ?: 1) }
             }.fold({
                 it.reportError()
             }, {
-                it.displayResult()
+                displayResult(it)
             })
-
         }
     }
 
@@ -52,10 +45,44 @@ class HomeViewModel(private val getAllCharactersCase: GetAllCharactersCase) : Vi
         println(message)
 
     @UiThread
-    private suspend fun CharacterList.displayResult() {
-        characterList.postValue(this)
+    private suspend fun displayResult(result: CharacterListModel) {
+        nextPage = result.nextPage
+        val previousPage = characterList.value?.toMutableList()?.apply {
+            removeAll { it is LoadingDisplayModel }
+        }
+        val nextPage: MutableList<HomeItemDisplayModel> = result.list.map { it.toDisplayModel() }.toMutableList()
+        nextPage.apply {
+            if (result.nextPage != null) {
+                add(LoadingDisplayModel)
+            }
+        }
+        characterList.postValue(previousPage?.apply { addAll(nextPage) })
     }
+
+    fun characterClicked(id: Int) {
+        val newList = (characterList.value?.toMutableList()?.apply {
+            remove(find { it is CharacterDisplayModel && it.id == id })
+        })
+        characterList.value = newList
+    }
+
 
 }
 
 
+//fun startArrowVersion() {
+//    val (fetchCharacters, cancel) = fxCancellable {
+//        val result = !effect { getAllCharactersCase() }.attempt()
+//        Dispatchers.Main.shift()
+//        result.fold(
+//            { !effect { it.reportError() } },
+//            {
+//                !effect { characterList ->
+//                    characterList.list.map { it.toDisplayModel() }
+//                }
+//                )
+//            }
+//
+//                    disposer . add (cancel)
+//                    unsafe { runBlocking { fetchCharacters } }
+//    }
