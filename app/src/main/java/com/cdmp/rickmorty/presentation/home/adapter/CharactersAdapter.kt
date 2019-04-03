@@ -13,6 +13,7 @@ import com.cdmp.rickmorty.R
 import com.cdmp.rickmorty.databinding.LoadingHolderBinding
 import com.cdmp.rickmorty.presentation.home.model.CharacterDisplayModel
 import com.cdmp.rickmorty.presentation.home.model.HomeItemDisplayModel
+import com.cdmp.rickmorty.presentation.home.model.HomeItemViewType
 import com.cdmp.rickmorty.presentation.home.model.LoadingDisplayModel
 import com.cdmp.rickmorty.utils.view.CircleTransform
 import com.squareup.picasso.Picasso
@@ -34,7 +35,7 @@ class CharactersAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = LayoutInflater.from(parent.context).run {
         when (viewType) {
-            0 -> {
+            HomeItemViewType -> {
                 val binding = DataBindingUtil.inflate<CharacterHolderBinding>(
                     this, R.layout.character_holder, parent, false
                 )

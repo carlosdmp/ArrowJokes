@@ -5,15 +5,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.Try
+import arrow.effects.extensions.io.fx.fxCancellable
+import arrow.unsafe
 import com.cdmp.rickmorty.domain.model.CharacterListModel
 import com.cdmp.rickmorty.domain.usecase.GetCharacterCase
 import com.cdmp.rickmorty.presentation.home.model.CharacterDisplayModel
 import com.cdmp.rickmorty.presentation.home.model.HomeItemDisplayModel
 import com.cdmp.rickmorty.presentation.home.model.LoadingDisplayModel
 import com.cdmp.rickmorty.utils.default
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel() {
 
@@ -31,13 +31,25 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
     private fun loadCharacters() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                Try { getCharacterCase * (nextPage ?: 1) }
+                Try { getCharacterCase.getPage(nextPage) }
             }.fold({
                 it.reportError()
             }, {
                 displayResult(it)
             })
         }
+    }
+
+    fun loadCharactersFx() {
+        val (fetchCharacters, cancel) = fxCancellable {
+            val result = !effect { getCharacterCase.getPage(nextPage) }.attempt()
+            Dispatchers.Main.shift()
+            result.fold(
+                { !effect { it.reportError() } },
+                { !effect { displayResult(it) } }
+            )
+        }
+        unsafe { runBlocking { fetchCharacters } }
     }
 
     @UiThread
@@ -65,24 +77,6 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
         })
         characterList.value = newList
     }
-
-
 }
 
 
-//fun startArrowVersion() {
-//    val (fetchCharacters, cancel) = fxCancellable {
-//        val result = !effect { getAllCharactersCase() }.attempt()
-//        Dispatchers.Main.shift()
-//        result.fold(
-//            { !effect { it.reportError() } },
-//            {
-//                !effect { characterList ->
-//                    characterList.list.map { it.toDisplayModel() }
-//                }
-//                )
-//            }
-//
-//                    disposer . add (cancel)
-//                    unsafe { runBlocking { fetchCharacters } }
-//    }
