@@ -54,6 +54,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$rootProject.coroutinesVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$rootProject.coroutinesVersion"
+
     implementation "org.koin:koin-android:$rootProject.koinVersion"
     implementation "io.arrow-kt:arrow-core-data:$rootProject.arrow_version"
     implementation "io.arrow-kt:arrow-core-extensions:$rootProject.arrow_version"
@@ -91,4 +92,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     testImplementation "io.mockk:mockk:$mockk_version"
     testImplementation group: 'androidx.arch.core', name: 'core-testing', version: '2.0.1'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$rootProject.coroutinesVersion"
 }

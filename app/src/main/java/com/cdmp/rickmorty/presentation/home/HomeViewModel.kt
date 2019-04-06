@@ -3,7 +3,6 @@ package com.cdmp.rickmorty.presentation.home
 import androidx.annotation.UiThread
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import arrow.core.Try
 import arrow.effects.extensions.io.fx.fxCancellable
 import arrow.unsafe
@@ -15,10 +14,13 @@ import com.cdmp.rickmorty.presentation.home.model.LoadingDisplayModel
 import com.cdmp.rickmorty.utils.default
 import kotlinx.coroutines.*
 
-class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel() {
+class HomeViewModel(
+    private val getCharacterCase: GetCharacterCase,
+    scope: ViewModelScope = viewModelScope()
+) : ViewModel(), ViewModelScope by scope {
 
     val characterList = MutableLiveData<List<HomeItemDisplayModel>>().default(listOf())
-    private var nextPage: Int? = null
+    private var nextPage: Int? = 1
 
     fun start() {
         loadCharacters()
@@ -29,8 +31,8 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
     }
 
     private fun loadCharacters() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+        launch {
+            withContext(IO) {
                 Try { getCharacterCase.getPage(nextPage) }
             }.fold({
                 it.reportError()
@@ -53,11 +55,11 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
     }
 
     @UiThread
-    private suspend fun Throwable.reportError(): Unit =
+    private fun Throwable.reportError(): Unit =
         println(message)
 
     @UiThread
-    private suspend fun displayResult(result: CharacterListModel) {
+    private fun displayResult(result: CharacterListModel) {
         nextPage = result.nextPage
         val previousPage = characterList.value?.toMutableList()?.apply {
             removeAll { it is LoadingDisplayModel }
@@ -68,7 +70,7 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
                 add(LoadingDisplayModel)
             }
         }
-        characterList.postValue(previousPage?.apply { addAll(nextPage) })
+        characterList.value = (previousPage?.apply { addAll(nextPage) })
     }
 
     fun characterClicked(id: Int) {
@@ -76,6 +78,11 @@ class HomeViewModel(private val getCharacterCase: GetCharacterCase) : ViewModel(
             remove(find { it is CharacterDisplayModel && it.id == id })
         })
         characterList.value = newList
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        job.cancel()
     }
 }
 
