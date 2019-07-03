@@ -14,7 +14,7 @@ buildscript {
         coroutinesVersion = "1.1.0"
         espressoVersion = '3.1.0-alpha4'
         glideVersion = '4.8.0'
-        gradleVersion = '3.2.1'
+        gradleVersion = '3.4.1'
         gsonVersion = '2.8.2'
         junitVersion = '4.12'
         kotlinVersion = '1.3.11'
@@ -31,9 +31,10 @@ buildscript {
         workVersion = '1.0.0-beta01'
         koinVersion = '1.0.2'
         arrow_version = "0.9.0"
-        retrofitVersion = "2.5.0"
+        retrofitVersion = "2.6.0"
         gsonVersion = "2.8.5"
-        mockk_version ="1.9.3.kotlin12"
+        mockk_version = "1.9.3"
+        expressoVersion = "3.0.2"
     }
 
     ext.kotlin_version = '1.3.10'

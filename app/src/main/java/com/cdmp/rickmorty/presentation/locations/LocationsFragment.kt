@@ -1,4 +1,4 @@
-package com.cdmp.rickmorty.presentation.home
+package com.cdmp.rickmorty.presentation.locations
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,21 +10,22 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cdmp.rickmorty.R
-import com.cdmp.rickmorty.databinding.HomeFragmentBinding
+import com.cdmp.rickmorty.databinding.LocationsFragmentBinding
+import com.cdmp.rickmorty.presentation.home.HomeFragment
+import com.cdmp.rickmorty.presentation.home.HomeViewModel
+import com.cdmp.rickmorty.presentation.home.MainActivity
 import com.cdmp.rickmorty.presentation.home.adapter.CharactersAdapter
+import com.cdmp.rickmorty.presentation.locations.adapter.LocationsAdapter
 import kotlinx.android.synthetic.main.home_fragment.*
+import kotlinx.android.synthetic.main.locations_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import com.cdmp.rickmorty.presentation.home.MainActivity.MainActivityNavigationController
 
+class LocationsFragment : Fragment() {
 
-class HomeFragment : Fragment(),
-    MainActivity.MainActivityHosted {
-    override var navigationController: MainActivityNavigationController? = null
-
-    private lateinit var binding: HomeFragmentBinding
+    private lateinit var binding: LocationsFragmentBinding
 
     private val viewModel: HomeViewModel by viewModel()
-    private val adapter = CharactersAdapter(
+    private val adapter = LocationsAdapter(
         clickCallback = {
             viewModel.characterClicked(it)
         }, loadingReached = {
@@ -33,36 +34,27 @@ class HomeFragment : Fragment(),
     )
 
     companion object {
-        fun newInstance(navController: MainActivityNavigationController) =
-            HomeFragment().apply {
-                navigationController = navController
-            }
+        fun newInstance() = LocationsFragment()
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = DataBindingUtil.inflate(
-            inflater, R.layout.home_fragment, container, false
+            inflater, R.layout.locations_fragment, container, false
         )
         return (binding.root)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        character_recycler.layoutManager =
-            LinearLayoutManager(context, RecyclerView.VERTICAL, false)
-        character_recycler.adapter = adapter
-        viewModel.characterList.observe(this, Observer { characters ->
-            characters.fold({
-
-            }, { list ->
-                characters?.let { adapter.submitList(list) }
-            })
-
-        })
-        viewModel.start()
+        locations_recycler.layoutManager =
+                LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+        locations_recycler.adapter = adapter
+        //   viewModel.characterList.observe(this, Observer { characters ->
+        //   characters?.let { adapter.updateListItems(it) }
+        //   })
+        //  viewModel.start()
     }
 }

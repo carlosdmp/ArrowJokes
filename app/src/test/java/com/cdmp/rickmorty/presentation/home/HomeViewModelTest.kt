@@ -2,17 +2,18 @@ package com.cdmp.rickmorty.presentation.home
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Observer
+import arrow.core.Either
+import arrow.core.Left
+import arrow.core.Right
 import com.cdmp.rickmorty.CoroutinesMainDispatcherRule
 import com.cdmp.rickmorty.domain.model.CharacterListModel
 import com.cdmp.rickmorty.domain.model.CharacterModel
 import com.cdmp.rickmorty.domain.usecase.GetCharacterCase
+import com.cdmp.rickmorty.presentation.ErrorDisplay
 import com.cdmp.rickmorty.presentation.home.model.CharacterDisplayModel
 import com.cdmp.rickmorty.presentation.home.model.HomeItemDisplayModel
 import com.cdmp.rickmorty.presentation.home.model.LoadingDisplayModel
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import io.mockk.verifyOrder
+import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
@@ -27,8 +28,9 @@ class HomeViewModelTest {
     @JvmField
     val rule = InstantTaskExecutorRule()
 
-    val mockedCase = mockk<GetCharacterCase>()
-    val mockedModel = CharacterListModel(
+    private val mockedCase = mockk<GetCharacterCase>()
+
+    private val mockedModel = CharacterListModel(
         list = listOf(
             CharacterModel(
                 id = 1,
@@ -47,7 +49,7 @@ class HomeViewModelTest {
         ),
         nextPage = 1
     )
-    val mockedDisplay = listOf(
+    private val mockedDisplay = listOf(
         CharacterDisplayModel(
             name = "testName",
             image = "testImage",
@@ -55,15 +57,13 @@ class HomeViewModelTest {
         ),
         LoadingDisplayModel
     )
-    val observer = mockk<Observer<List<HomeItemDisplayModel>>>().apply {
-        every { onChanged(any()) } returns Unit
-    }
+    private val observer = mockk<Observer<Either<ErrorDisplay, List<HomeItemDisplayModel>>>>()
+        .apply {
+            every { onChanged(any()) } returns Unit
+        }
 
-    lateinit var vm: HomeViewModel
-
-    @Before
-    fun setUp() {
-        vm = HomeViewModel(
+    private val vm: HomeViewModel by lazy {
+        HomeViewModel(
             getCharacterCase = mockedCase,
             scope = testScope()
         ).apply {
@@ -71,31 +71,44 @@ class HomeViewModelTest {
         }
     }
 
-    @After
-    fun tearDown() {
-    }
-
     @Test
     fun initialLiveData() {
         vm
-        verify { observer.onChanged(listOf<CharacterDisplayModel>()) }
-        assertEquals(vm.characterList.value, listOf<CharacterDisplayModel>())
-    }
-
-    @Test
-    fun getCharacterListWithNextPage() {
-        every { mockedCase.getPage(1) } returns mockedModel
-        vm.start()
-        verify { mockedCase.getPage(1) }
-        verifyOrder {
-            observer.onChanged(listOf<CharacterDisplayModel>())
-            observer.onChanged(mockedDisplay)
-        }
-        assertEquals(vm.characterList.value, mockedDisplay)
+        verify { observer.onChanged(Right(listOf<CharacterDisplayModel>())) }
+        assertEquals(vm.characterList.value, Right(listOf<CharacterDisplayModel>()))
     }
 
     @Test
     fun start() {
+        //change to every
+        coEvery { mockedCase.getPage(1) } returns Either.right(mockedModel)
+
+        vm.start()
+
+        coVerify { mockedCase.getPage(1) }
+        verifyOrder {
+            observer.onChanged(Right(listOf<CharacterDisplayModel>()))
+            observer.onChanged(Right(mockedDisplay))
+        }
+        assertEquals(vm.characterList.value, Right(mockedDisplay))
+    }
+
+    @Test
+    fun startWithError() {
+        coEvery { mockedCase.getPage(1) } returns Either.left(mockk {
+            every { toDisplay() } returns mockk {
+                every { message } returns "test message"
+            }
+        })
+
+        vm.start()
+
+        coVerify { mockedCase.getPage(1) }
+        verifyOrder {
+            observer.onChanged(Right(listOf<CharacterDisplayModel>()))
+            observer.onChanged(any())
+        }
+        assertEquals(Left(ErrorDisplay("test message")), vm.characterList.value)
     }
 
     @Test
@@ -109,8 +122,8 @@ class HomeViewModelTest {
     @Test
     fun characterClicked() {
         vm.characterClicked(1)
-        verify { observer.onChanged(listOf<CharacterDisplayModel>()) }
-        assertEquals(vm.characterList.value, listOf<CharacterDisplayModel>())
+        verify { observer.onChanged(Right(listOf<CharacterDisplayModel>())) }
+        assertEquals(vm.characterList.value, Right(listOf<CharacterDisplayModel>()))
     }
 
 }

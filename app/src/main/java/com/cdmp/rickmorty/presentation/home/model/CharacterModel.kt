@@ -1,12 +1,12 @@
 package com.cdmp.rickmorty.presentation.home.model
 
-import apps.cdmp.diffadapter.DiffModel
-
 const val HomeItemViewType = 0
 const val HomeLoadingViewType = 1
 
-sealed class HomeItemDisplayModel : DiffModel<HomeItemDisplayModel> {
+sealed class HomeItemDisplayModel {
     abstract fun getViewType(): Int
+    abstract fun areItemsTheSame(other: HomeItemDisplayModel): Boolean
+    abstract fun areContentsTheSame(other: HomeItemDisplayModel): Boolean
 }
 
 data class CharacterDisplayModel(

@@ -1,8 +1,6 @@
 package com.cdmp.rickmorty.presentation.home
 
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
 
 interface ViewModelScope : CoroutineScope {
 
